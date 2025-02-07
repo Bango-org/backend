@@ -35,10 +35,11 @@ interface MarketState {
 }
 
 class LMSR_AMM {
-    private readonly FEE_RATE = 0.02;           // 2% fee
-    private readonly INITIAL_LIQUIDITY = 100;   // Initial liquidity parameter
-    private readonly MIN_SHARES = 1;            // Minimum shares to maintain
-    private readonly MAX_PRICE_IMPACT = 0.5;    // 50% max price impact
+    private readonly FEE_RATE = 0.02;           
+    private readonly INITIAL_LIQUIDITY = 100;   
+    private readonly MIN_SHARES = 1;            
+    private readonly MAX_PRICE_IMPACT = 0.5;    
+    private readonly MAX_SHARE_RATIO = 1000; 
 
     // Get current market state
     private async getMarketState(eventId: number): Promise<MarketState> {
@@ -59,16 +60,27 @@ class LMSR_AMM {
 
     // Calculate prices for all outcomes
     private calculatePrices(shares: number[], b: number): number[] {
-        const expShares = shares.map(s => Math.exp(s / b));
-        const sumExp = expShares.reduce((sum, exp) => sum + exp, 0);
-        return expShares.map(exp => exp / sumExp);
+        // Find maximum share value to prevent overflow
+        const maxShare = Math.max(...shares);
+        
+        // Calculate exp(si/b - smax/b) = exp(si/b)/exp(smax/b) to prevent overflow
+        const normalizedExp = shares.map(s => Math.exp((s - maxShare) / b));
+        const sumExp = normalizedExp.reduce((sum, exp) => sum + exp, 0);
+        return normalizedExp.map(exp => exp / sumExp);
     }
 
     // Calculate cost for share change
     private calculateCost(oldShares: number[], newShares: number[], b: number): number {
-        const oldCost = b * Math.log(oldShares.reduce((sum, s) => sum + Math.exp(s / b), 0));
-        const newCost = b * Math.log(newShares.reduce((sum, s) => sum + Math.exp(s / b), 0));
-        return newCost - oldCost;
+        const maxOldShare = Math.max(...oldShares);
+        const maxNewShare = Math.max(...newShares);
+        
+        // Calculate log sum exp with numerical stability
+        const oldSum = Math.log(oldShares.map(s => Math.exp((s - maxOldShare) / b))
+            .reduce((sum, exp) => sum + exp, 0)) + maxOldShare / b;
+        const newSum = Math.log(newShares.map(s => Math.exp((s - maxNewShare) / b))
+            .reduce((sum, exp) => sum + exp, 0)) + maxNewShare / b;
+            
+        return b * (newSum - oldSum);
     }
 
     // Calculate price impacts
@@ -110,14 +122,24 @@ class LMSR_AMM {
 
             // Calculate current prices
             const pricesBefore = this.calculatePrices(currentShares, b);
+            const maxCurrentShare = Math.max(...currentShares);
+            const minCurrentShare = Math.min(...currentShares);
+
+            if (maxCurrentShare / minCurrentShare > this.MAX_SHARE_RATIO) {
+                throw new ApiError(
+                    StatusCodes.BAD_REQUEST, 
+                    'Market too imbalanced - try a smaller trade'
+                );
+            }
+
 
             // Binary search for optimal shares to buy
             let low = 1;
-            let high = amount * 100;
+            let high = Math.min(amount * 100, this.MAX_SHARE_RATIO * minCurrentShare);
             let sharesToBuy = 0;
             let totalCost = 0;
             let newShares = currentShares;
-
+                        
             while (low <= high) {
                 const mid = Math.floor((low + high) / 2);
                 const testShares = [...currentShares];
@@ -246,6 +268,15 @@ class LMSR_AMM {
             // Calculate new shares and cost
             const newShares = [...currentShares];
             newShares[outcomeIndex] -= sharesToSell;
+            const maxNewShare = Math.max(...newShares);
+            const minNewShare = Math.min(...newShares)
+
+            if (maxNewShare / minNewShare > this.MAX_SHARE_RATIO) {
+                throw new ApiError(
+                    StatusCodes.BAD_REQUEST, 
+                    'Sell would create too much market imbalance'
+                );
+            }
 
             // Ensure minimum shares maintained
             if (newShares[outcomeIndex] < this.MIN_SHARES) {
