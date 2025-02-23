@@ -113,7 +113,7 @@ class LMSR_AMM {
             });
 
             if (!user) throw new ApiError(StatusCodes.NOT_FOUND,'User not found');
-            // if (user.playmoney < amount) throw new ApiError(StatusCodes.BAD_REQUEST, 'Insufficient balance');
+            if (user.playmoney < amount) throw new ApiError(StatusCodes.BAD_REQUEST, 'Insufficient balance');
 
             // Get market state
             const { shares: currentShares, b, outcomes } = await this.getMarketState(eventId);
@@ -170,10 +170,10 @@ class LMSR_AMM {
             // }
 
             // Update user balance
-            // await tx.user.update({
-            //     where: { id: userId },
-            //     data: { playmoney: { decrement: Math.ceil(totalCost) } }
-            // });
+            await tx.user.update({
+                where: { id: userId },
+                data: { playmoney: { decrement: Math.ceil(totalCost) } }
+            });
 
             // Update outcome shares and liquidity
             await tx.outcome.update({
@@ -321,10 +321,10 @@ class LMSR_AMM {
             }
 
             // Update user balance
-            // await tx.user.update({
-            //     where: { id: userId },
-            //     data: { playmoney: { increment: returnAmount } }
-            // });
+            await tx.user.update({
+                where: { id: userId },
+                data: { playmoney: { increment: returnAmount } }
+            });
 
             // Update token allocation
             await tx.tokenAllocation.update({

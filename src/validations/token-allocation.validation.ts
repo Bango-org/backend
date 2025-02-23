@@ -19,7 +19,22 @@ const getTokenAllocation = {
   })
 };
 
+const getTokenBalance = {
+  params: Joi.object().keys({
+    wallet_address: Joi.string().required()
+  })
+};
+
+
+const buyTokens = {
+  params: Joi.object().keys({
+    txid: Joi.string().required()
+  })
+};
+
 export default {
   getTokenAllocations,
   getTokenAllocation,
+  getTokenBalance,
+  buyTokens
 };

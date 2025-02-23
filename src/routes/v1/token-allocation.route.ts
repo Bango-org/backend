@@ -14,6 +14,16 @@ router
   .route('/:tokenAllocationId')
   .get(validate(tokenAllocatioValidation.getTokenAllocation), tokenAllocationController.getTokenAllocation)
 
+
+router
+  .route('/balance/:wallet_address')
+  .get(validate(tokenAllocatioValidation.getTokenBalance), tokenAllocationController.getTokenBalance)
+
+router
+  .route('/buyPusd/:txid')
+  .get(validate(tokenAllocatioValidation.buyTokens), tokenAllocationController.buyTokens)
+
+
 export default router;
 
 /**
@@ -129,6 +139,62 @@ export default router;
  *                $ref: '#/components/schemas/TokenAllocation'
  *       "401":
  *         $ref: '#/components/responses/Unauthorized'
+ *       "403":
+ *         $ref: '#/components/responses/Forbidden'
+ *       "404":
+ *         $ref: '#/components/responses/NotFound'
+ */
+
+
+
+/**
+ * @swagger
+ * /token-allocations/balance/{wallet_address}:
+ *   get:
+ *     summary: Get a Token Balance
+ *     description: Anyone can retrieve Token Balance of a wallet address
+ *     tags: [Token Allocation]
+ *     parameters:
+ *       - in: path
+ *         name: wallet_address
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: wallet address
+ *     responses:
+ *       "200":
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *                $ref: '#/components/schemas/TokenAllocation'
+ *       "403":
+ *         $ref: '#/components/responses/Forbidden'
+ *       "404":
+ *         $ref: '#/components/responses/NotFound'
+ */
+
+
+/**
+ * @swagger
+ * /token-allocations/buyPusd/{txid}:
+ *   get:
+ *     summary: Buy PUSD from Arch Tx
+ *     tags: [Token Allocation]
+ *     parameters:
+ *       - in: path
+ *         name: txid
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: bitcoin txid
+ *     responses:
+ *       "200":
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *                $ref: '#/components/schemas/TokenAllocation'
  *       "403":
  *         $ref: '#/components/responses/Forbidden'
  *       "404":
