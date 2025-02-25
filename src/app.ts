@@ -1,7 +1,7 @@
+import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
 import compression from 'compression';
-import cors from 'cors';
 import passport from 'passport';
 import { StatusCodes } from 'http-status-codes';
 import config from './config/config';
@@ -20,6 +20,15 @@ if (config.env !== 'test') {
   app.use(morgan.errorHandler);
 }
 
+// enable cors
+app.use(cors());
+app.use(cors({
+  origin: '*', // Allow all origins
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Allow these HTTP methods
+  allowedHeaders: ['Content-Type', 'Authorization'], // Allow these headers
+  credentials: true // If using cookies or authentication headers
+}));
+
 // set security HTTP headers
 app.use(helmet());
 
@@ -34,10 +43,6 @@ app.use(xss());
 
 // gzip compression
 app.use(compression());
-
-// enable cors
-app.use(cors());
-app.options('*', cors());
 
 // jwt authentication
 app.use(passport.initialize());
