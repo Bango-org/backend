@@ -21,13 +21,14 @@ if (config.env !== 'test') {
 }
 
 // enable cors
-app.use(cors());
 app.use(cors({
   origin: '*', // Allow all origins
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Allow these HTTP methods
   allowedHeaders: ['Content-Type', 'Authorization'], // Allow these headers
   credentials: true // If using cookies or authentication headers
 }));
+app.use(express.json()); // Ensure JSON parsing middleware is before routes
+
 
 // set security HTTP headers
 app.use(helmet());
