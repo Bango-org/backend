@@ -15,18 +15,33 @@ import ApiError from './utils/ApiError';
 
 const app = express();
 
+const allowedOrigins = [
+  'https://predictr.market',
+  'https://www.testnetapp.xyz',
+  'https://arch-bango-rho.vercel.app'
+];
+
+
 if (config.env !== 'test') {
   app.use(morgan.successHandler);
   app.use(morgan.errorHandler);
 }
 
-// enable cors
+
 app.use(cors({
-  origin: '*', // Allow all origins
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Allow these HTTP methods
-  allowedHeaders: ['Content-Type', 'Authorization'], // Allow these headers
-  credentials: true // If using cookies or authentication headers
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: "*",
+  credentials: true
 }));
+
+
 app.use(express.json()); // Ensure JSON parsing middleware is before routes
 
 
