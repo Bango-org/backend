@@ -14,12 +14,13 @@ import { errorConverter, errorHandler } from './middlewares/error';
 import ApiError from './utils/ApiError';
 
 const app = express();
+app.use(cors());
 
-const allowedOrigins = [
-  'https://predictr.market',
-  'https://www.testnetapp.xyz',
-  'https://arch-bango-rho.vercel.app'
-];
+// const allowedOrigins = [
+//   'https://predictr.market',
+//   'https://www.testnetapp.xyz',
+//   'https://arch-bango-rho.vercel.app'
+// ];
 
 
 if (config.env !== 'test') {
@@ -28,18 +29,6 @@ if (config.env !== 'test') {
 }
 
 
-app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: "*",
-  credentials: true
-}));
 
 
 app.use(express.json()); // Ensure JSON parsing middleware is before routes
