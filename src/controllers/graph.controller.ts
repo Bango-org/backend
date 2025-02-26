@@ -70,7 +70,6 @@ const getEventIntervalLessGraph = catchAsync(async (req: any, res: any) => {
         afterPrice: true
       }
     })
-    console.log(graphData)
 
     if (graphData.length === 0) {
       return {

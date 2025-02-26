@@ -1,6 +1,6 @@
 import { StatusCodes } from 'http-status-codes';
 import catchAsync from '../utils/catchAsync';
-import { amm } from '../amm';
+import { amm } from '../cpmm';
 import prisma from '../client';
 import { OrderType } from '@prisma/client';
 import pick from '../utils/pick';
@@ -76,7 +76,6 @@ const getOutcomeShares = catchAsync(async (req, res) => {
         }
     })
 
-    console.log(shares)
 
     res.status(StatusCodes.OK).send(shares);
 });

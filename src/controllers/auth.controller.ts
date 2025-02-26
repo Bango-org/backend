@@ -25,7 +25,6 @@ const login = catchAsync(async (req, res) => {
   } else {
 
     let address = web3.eth.accounts.recover(config.signature_message, signature);
-    console.log(address)
 
     if (address !== walletAddress) {
       res.status(400).send("INVALID SIGNATURE");

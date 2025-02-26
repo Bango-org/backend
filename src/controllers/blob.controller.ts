@@ -7,7 +7,6 @@ const createBlob = catchAsync(async (req, res) => {
     const image = req.file!;
 
     let result: UploadResult | null = null;
-    console.log(type);
 
     if (type === "users") {
         result = await users_blob_uploader.uploadImage(image.buffer, image.originalname)
