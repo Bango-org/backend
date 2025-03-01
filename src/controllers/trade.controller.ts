@@ -73,6 +73,18 @@ const getOutcomeShares = catchAsync(async (req, res) => {
             outcome: {
                 eventID: req.params.eventId
             }
+        },
+        select: {
+            amount: true,
+            userId: true,
+            createdAt: true,
+            updatedAt: true,
+            outcome: {
+                select: {
+                    id: true,
+                    outcome_title: true
+                }
+            }
         }
     })
 
@@ -81,7 +93,7 @@ const getOutcomeShares = catchAsync(async (req, res) => {
 });
 
 const getOutcomePrices = catchAsync(async (req, res) => {
-    
+
     // const btcUsd = await fetch(`https://pro-api.coinmarketcap.com/v2/cryptocurrency/quotes/latest?symbol=BTC&convert=USD`, {
     //     method: "GET",
     //     headers: {
