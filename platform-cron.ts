@@ -1,5 +1,5 @@
 // weekly-trade-stats.ts
-import cron from "node-cron";
+import * as cron from "node-cron";
 import { PrismaClient } from "@prisma/client";
 import * as dotenv from "dotenv";
 
