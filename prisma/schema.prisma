@@ -149,12 +149,14 @@ model Thread {
 }
 
 model PlatformStats {
-  id                Int @id @default(autoincrement())
-  tradeCount        Int @default(0)
-  userCount         Int @default(0)
-  eventCount        Int @default(0)
-  totalAmountTraded Int @default(0)
-  totalValueLocked  Int @default(0)
+  id                 Int @id @default(autoincrement())
+  tradeCount         Int @default(0)
+  userCount          Int @default(0)
+  eventCount         Int @default(0)
+  totalAmountTraded  Int @default(0)
+  totalValueLocked   Int @default(0)
+  monthlyActiveUsers Int @default(0)
+  dailyActiveUsers   Int @default(0)
 }
 
 enum Role {

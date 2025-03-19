@@ -45,7 +45,7 @@ const updateDailyTradeStats = async () => {
 
     const resp = await fetch("https://blockstream.info/testnet/api/address/tb1pd0epx6sjty2xd2ukxmj5j59a3nykuggkkqqsm28x5uweev6s7peqr32gvq");
     const data = await resp.json()
-    
+
 
     const statsId = await prisma.platformStats.findFirst();
 
@@ -58,7 +58,43 @@ const updateDailyTradeStats = async () => {
             }
         })
     }
-    
+
+
+    const dailyActiveUsers = await prisma.trade.findMany({
+        where: {
+            createdAt: {
+                gte: new Date(Date.now() - 24 * 60 * 60 * 1000) // Last 24 hours
+            },
+            userID: {
+                not: null // Ensure we only count trades with a valid userID
+            }
+        },
+        select: {
+            userID: true
+        },
+        distinct: ['userID']
+    });
+
+    const DAU = dailyActiveUsers.length;
+
+    // Get Monthly Active Users (MAU)
+    const monthlyActiveUsers = await prisma.trade.findMany({
+        where: {
+            createdAt: {
+                gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // Last 30 days
+            },
+            userID: {
+                not: null // Ensure we only count trades with a valid userID
+            }
+        },
+        select: {
+            userID: true
+        },
+        distinct: ['userID']
+    });
+
+    const MAU = monthlyActiveUsers.length;
+
     await prisma.platformStats.updateMany({
         where: {
             id: statsId?.id
@@ -68,7 +104,9 @@ const updateDailyTradeStats = async () => {
             userCount,
             eventCount,
             totalAmountTraded: parseInt((totalTradeAmount._sum.amount || 0).toString()),
-            totalValueLocked: data.chain_stats.funded_txo_sum
+            totalValueLocked: data.chain_stats.funded_txo_sum,
+            dailyActiveUsers: DAU,
+            monthlyActiveUsers: MAU
         },
     });
 
