@@ -26,6 +26,8 @@ model User {
   events          Event[]
   trades          Trade[]
   token_allocated TokenAllocation[]
+
+  @@index([id, wallet_address])
 }
 
 model Token {
@@ -67,6 +69,8 @@ model Event {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([id, unique_id])
 }
 
 model Outcome {
@@ -81,6 +85,8 @@ model Outcome {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([id, outcome_title])
 }
 
 model TokenAllocation {
@@ -95,6 +101,8 @@ model TokenAllocation {
   updatedAt DateTime @updatedAt
 
   @@unique([userId, outcomeId])
+
+  @@index([id, userId, outcomeId])
 }
 
 model Trade {
@@ -120,6 +128,8 @@ model Trade {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([id, eventID, outcomeId, userID])
 }
 
 model Thread {
