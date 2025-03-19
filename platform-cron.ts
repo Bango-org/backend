@@ -26,7 +26,7 @@ const handleError = (fn: Function) => {
 
 
 // Main cron job function
-const updateWeeklyTradeStats = async () => {
+const updateDailyTradeStats = async () => {
     console.log(`[${new Date().toISOString()}] Starting weekly trade stats update...`);
 
     let tradeCount = await prisma.trade.count();
@@ -76,12 +76,12 @@ const updateWeeklyTradeStats = async () => {
 };
 
 // Schedule the cron job to run every Sunday at midnight
-cron.schedule("0 0 * * 0", handleError(updateWeeklyTradeStats), {
+cron.schedule("0 0 * * *", handleError(updateDailyTradeStats), {
     timezone: "UTC" // Specify timezone if needed
 });
 
 // Also expose a function to run the job manually if needed
-export const runManualUpdate = handleError(updateWeeklyTradeStats);
+export const runManualUpdate = handleError(updateDailyTradeStats);
 
 console.log("Weekly trade stats cron job scheduled to run every Sunday at midnight (UTC).");
 
