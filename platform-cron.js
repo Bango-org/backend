@@ -36,6 +36,9 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.runManualUpdate = void 0;
+// weekly-trade-stats.ts
+var cron = require("node-cron");
 var client_1 = require("@prisma/client");
 var dotenv = require("dotenv");
 dotenv.config();
@@ -174,22 +177,37 @@ var updateDailyTradeStats = function () { return __awaiter(void 0, void 0, void 
         }
     });
 }); };
-updateDailyTradeStats();
-// // Schedule the cron job to run every Sunday at midnight
-// cron.schedule("0 0 * * *", handleError(updateDailyTradeStats), {
-//     timezone: "UTC" // Specify timezone if needed
-// });
-// // Also expose a function to run the job manually if needed
-// export const runManualUpdate = handleError(updateDailyTradeStats);
-// console.log("Weekly trade stats cron job scheduled to run every Sunday at midnight (UTC).");
-// // Handle termination signals for clean shutdown
-// process.on('SIGTERM', async () => {
-//     console.log('SIGTERM received, shutting down gracefully');
-//     await prisma.$disconnect();
-//     process.exit(0);
-// });
-// process.on('SIGINT', async () => {
-//     console.log('SIGINT received, shutting down gracefully');
-//     await prisma.$disconnect();
-//     process.exit(0);
-// });
+// Schedule the cron job to run every Sunday at midnight
+cron.schedule("0 0 * * *", handleError(updateDailyTradeStats), {
+    timezone: "UTC" // Specify timezone if needed
+});
+// Also expose a function to run the job manually if needed
+exports.runManualUpdate = handleError(updateDailyTradeStats);
+console.log("Weekly trade stats cron job scheduled to run every Sunday at midnight (UTC).");
+// Handle termination signals for clean shutdown
+process.on('SIGTERM', function () { return __awaiter(void 0, void 0, void 0, function () {
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0:
+                console.log('SIGTERM received, shutting down gracefully');
+                return [4 /*yield*/, prisma.$disconnect()];
+            case 1:
+                _a.sent();
+                process.exit(0);
+                return [2 /*return*/];
+        }
+    });
+}); });
+process.on('SIGINT', function () { return __awaiter(void 0, void 0, void 0, function () {
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0:
+                console.log('SIGINT received, shutting down gracefully');
+                return [4 /*yield*/, prisma.$disconnect()];
+            case 1:
+                _a.sent();
+                process.exit(0);
+                return [2 /*return*/];
+        }
+    });
+}); });

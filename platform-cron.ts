@@ -113,27 +113,25 @@ const updateDailyTradeStats = async () => {
 
 };
 
-updateDailyTradeStats()
+// Schedule the cron job to run every Sunday at midnight
+cron.schedule("0 0 * * *", handleError(updateDailyTradeStats), {
+    timezone: "UTC" // Specify timezone if needed
+});
 
-// // Schedule the cron job to run every Sunday at midnight
-// cron.schedule("0 0 * * *", handleError(updateDailyTradeStats), {
-//     timezone: "UTC" // Specify timezone if needed
-// });
+// Also expose a function to run the job manually if needed
+export const runManualUpdate = handleError(updateDailyTradeStats);
 
-// // Also expose a function to run the job manually if needed
-// export const runManualUpdate = handleError(updateDailyTradeStats);
+console.log("Weekly trade stats cron job scheduled to run every Sunday at midnight (UTC).");
 
-// console.log("Weekly trade stats cron job scheduled to run every Sunday at midnight (UTC).");
+// Handle termination signals for clean shutdown
+process.on('SIGTERM', async () => {
+    console.log('SIGTERM received, shutting down gracefully');
+    await prisma.$disconnect();
+    process.exit(0);
+});
 
-// // Handle termination signals for clean shutdown
-// process.on('SIGTERM', async () => {
-//     console.log('SIGTERM received, shutting down gracefully');
-//     await prisma.$disconnect();
-//     process.exit(0);
-// });
-
-// process.on('SIGINT', async () => {
-//     console.log('SIGINT received, shutting down gracefully');
-//     await prisma.$disconnect();
-//     process.exit(0);
-// });
+process.on('SIGINT', async () => {
+    console.log('SIGINT received, shutting down gracefully');
+    await prisma.$disconnect();
+    process.exit(0);
+});
