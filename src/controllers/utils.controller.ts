@@ -76,7 +76,15 @@ const sendBitcoin = catchAsync(async (req, res) => {
 });
 
 
+const fetchPlatformStats = catchAsync(async (req, res) => {
+    const platformStats = await prisma.platformStats.findFirst();
+    res.status(StatusCodes.OK).send(platformStats);
+});
+
+
+
 export default {
     sendBitcoin,
-    fetchBitcoinprice
+    fetchBitcoinprice,
+    fetchPlatformStats
 };

@@ -15,6 +15,11 @@ router
   .get(utilsController.fetchBitcoinprice)
 
 
+router
+  .route('/platform-stats')
+  .get(utilsController.fetchPlatformStats)
+
+
 /**
  * @swagger
  * tags:
@@ -72,6 +77,18 @@ router
  *
  */
 
+
+/**
+ * @swagger
+ * /utils/platform-stats:
+ *   get:
+ *     summary: Fetch Predictr platform stats 
+ *     tags: [Utils]
+ *     responses:
+ *       "200":
+ *         description: Ok
+ *
+ */
 
 
 export default router;
