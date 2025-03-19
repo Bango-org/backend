@@ -76,8 +76,8 @@ model Event {
 model Outcome {
   id               Int               @id @default(autoincrement())
   outcome_title    String
-  current_supply   Decimal               @default(0)
-  total_liquidity  Decimal               @default(0)
+  current_supply   Decimal           @default(0)
+  total_liquidity  Decimal           @default(0)
   event            Event             @relation(fields: [eventID], references: [id])
   eventID          Int
   tokenAllocations TokenAllocation[]
@@ -101,7 +101,6 @@ model TokenAllocation {
   updatedAt DateTime @updatedAt
 
   @@unique([userId, outcomeId])
-
   @@index([id, userId, outcomeId])
 }
 
@@ -110,8 +109,8 @@ model Trade {
   unique_id String @default(uuid())
 
   order_type OrderType @default(BUY)
-  order_size Decimal       @default(0)
-  amount     Decimal       @default(0)
+  order_size Decimal   @default(0)
+  amount     Decimal   @default(0)
 
   afterPrice Decimal @default(0) // price shift after the trade is bought
 
@@ -147,6 +146,15 @@ model Thread {
   userID Int?
 
   createdAt DateTime @default(now())
+}
+
+model PlatformStats {
+  id                Int @id @default(autoincrement())
+  tradeCount        Int @default(0)
+  userCount         Int @default(0)
+  eventCount        Int @default(0)
+  totalAmountTraded Int @default(0)
+  totalValueLocked  Int @default(0)
 }
 
 enum Role {
