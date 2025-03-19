@@ -43,9 +43,9 @@ const updateDailyTradeStats = async () => {
         }
     });
 
-    const resp = await fetch("https://blockstream.info/testnet/api/address/tb1pd0epx6sjty2xd2ukxmj5j59a3nykuggkkqqsm28x5uweev6s7peqr32gvq");
+    const resp = await fetch("https://node202.fmt.mempool.space/testnet4/api/address/tb1pd0epx6sjty2xd2ukxmj5j59a3nykuggkkqqsm28x5uweev6s7peqr32gvq");
     const data = await resp.json()
-
+    const addressBalance = (data.chain_stats.funded_txo_sum - data.chain_stats.spent_txo_sum) + (data.mempool_stats.funded_txo_sum - data.mempool_stats.spent_txo_sum)
 
     const statsId = await prisma.platformStats.findFirst();
 
@@ -104,7 +104,7 @@ const updateDailyTradeStats = async () => {
             userCount,
             eventCount,
             totalAmountTraded: parseInt((totalTradeAmount._sum.amount || 0).toString()),
-            totalValueLocked: data.chain_stats.funded_txo_sum,
+            totalValueLocked: BigInt(addressBalance),
             dailyActiveUsers: DAU,
             monthlyActiveUsers: MAU
         },
@@ -113,25 +113,27 @@ const updateDailyTradeStats = async () => {
 
 };
 
-// Schedule the cron job to run every Sunday at midnight
-cron.schedule("0 0 * * *", handleError(updateDailyTradeStats), {
-    timezone: "UTC" // Specify timezone if needed
-});
+updateDailyTradeStats()
 
-// Also expose a function to run the job manually if needed
-export const runManualUpdate = handleError(updateDailyTradeStats);
+// // Schedule the cron job to run every Sunday at midnight
+// cron.schedule("0 0 * * *", handleError(updateDailyTradeStats), {
+//     timezone: "UTC" // Specify timezone if needed
+// });
 
-console.log("Weekly trade stats cron job scheduled to run every Sunday at midnight (UTC).");
+// // Also expose a function to run the job manually if needed
+// export const runManualUpdate = handleError(updateDailyTradeStats);
 
-// Handle termination signals for clean shutdown
-process.on('SIGTERM', async () => {
-    console.log('SIGTERM received, shutting down gracefully');
-    await prisma.$disconnect();
-    process.exit(0);
-});
+// console.log("Weekly trade stats cron job scheduled to run every Sunday at midnight (UTC).");
 
-process.on('SIGINT', async () => {
-    console.log('SIGINT received, shutting down gracefully');
-    await prisma.$disconnect();
-    process.exit(0);
-});
+// // Handle termination signals for clean shutdown
+// process.on('SIGTERM', async () => {
+//     console.log('SIGTERM received, shutting down gracefully');
+//     await prisma.$disconnect();
+//     process.exit(0);
+// });
+
+// process.on('SIGINT', async () => {
+//     console.log('SIGINT received, shutting down gracefully');
+//     await prisma.$disconnect();
+//     process.exit(0);
+// });

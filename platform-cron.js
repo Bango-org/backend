@@ -36,9 +36,6 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.runManualUpdate = void 0;
-// weekly-trade-stats.ts
-var cron = require("node-cron");
 var client_1 = require("@prisma/client");
 var dotenv = require("dotenv");
 dotenv.config();
@@ -80,7 +77,7 @@ var handleError = function (fn) {
 };
 // Main cron job function
 var updateDailyTradeStats = function () { return __awaiter(void 0, void 0, void 0, function () {
-    var tradeCount, userCount, eventCount, totalTradeAmount, resp, data, statsId, dailyActiveUsers, DAU, monthlyActiveUsers, MAU;
+    var tradeCount, userCount, eventCount, totalTradeAmount, resp, data, addressBalance, statsId, dailyActiveUsers, DAU, monthlyActiveUsers, MAU;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -104,12 +101,13 @@ var updateDailyTradeStats = function () { return __awaiter(void 0, void 0, void 
                     })];
             case 4:
                 totalTradeAmount = _a.sent();
-                return [4 /*yield*/, fetch("https://blockstream.info/testnet/api/address/tb1pd0epx6sjty2xd2ukxmj5j59a3nykuggkkqqsm28x5uweev6s7peqr32gvq")];
+                return [4 /*yield*/, fetch("https://node202.fmt.mempool.space/testnet4/api/address/tb1pd0epx6sjty2xd2ukxmj5j59a3nykuggkkqqsm28x5uweev6s7peqr32gvq")];
             case 5:
                 resp = _a.sent();
                 return [4 /*yield*/, resp.json()];
             case 6:
                 data = _a.sent();
+                addressBalance = (data.chain_stats.funded_txo_sum - data.chain_stats.spent_txo_sum) + (data.mempool_stats.funded_txo_sum - data.mempool_stats.spent_txo_sum);
                 return [4 /*yield*/, prisma.platformStats.findFirst()];
             case 7:
                 statsId = _a.sent();
@@ -165,7 +163,7 @@ var updateDailyTradeStats = function () { return __awaiter(void 0, void 0, void 
                             userCount: userCount,
                             eventCount: eventCount,
                             totalAmountTraded: parseInt((totalTradeAmount._sum.amount || 0).toString()),
-                            totalValueLocked: data.chain_stats.funded_txo_sum,
+                            totalValueLocked: BigInt(addressBalance),
                             dailyActiveUsers: DAU,
                             monthlyActiveUsers: MAU
                         },
@@ -176,37 +174,22 @@ var updateDailyTradeStats = function () { return __awaiter(void 0, void 0, void 
         }
     });
 }); };
-// Schedule the cron job to run every Sunday at midnight
-cron.schedule("0 0 * * *", handleError(updateDailyTradeStats), {
-    timezone: "UTC" // Specify timezone if needed
-});
-// Also expose a function to run the job manually if needed
-exports.runManualUpdate = handleError(updateDailyTradeStats);
-console.log("Weekly trade stats cron job scheduled to run every Sunday at midnight (UTC).");
-// Handle termination signals for clean shutdown
-process.on('SIGTERM', function () { return __awaiter(void 0, void 0, void 0, function () {
-    return __generator(this, function (_a) {
-        switch (_a.label) {
-            case 0:
-                console.log('SIGTERM received, shutting down gracefully');
-                return [4 /*yield*/, prisma.$disconnect()];
-            case 1:
-                _a.sent();
-                process.exit(0);
-                return [2 /*return*/];
-        }
-    });
-}); });
-process.on('SIGINT', function () { return __awaiter(void 0, void 0, void 0, function () {
-    return __generator(this, function (_a) {
-        switch (_a.label) {
-            case 0:
-                console.log('SIGINT received, shutting down gracefully');
-                return [4 /*yield*/, prisma.$disconnect()];
-            case 1:
-                _a.sent();
-                process.exit(0);
-                return [2 /*return*/];
-        }
-    });
-}); });
+updateDailyTradeStats();
+// // Schedule the cron job to run every Sunday at midnight
+// cron.schedule("0 0 * * *", handleError(updateDailyTradeStats), {
+//     timezone: "UTC" // Specify timezone if needed
+// });
+// // Also expose a function to run the job manually if needed
+// export const runManualUpdate = handleError(updateDailyTradeStats);
+// console.log("Weekly trade stats cron job scheduled to run every Sunday at midnight (UTC).");
+// // Handle termination signals for clean shutdown
+// process.on('SIGTERM', async () => {
+//     console.log('SIGTERM received, shutting down gracefully');
+//     await prisma.$disconnect();
+//     process.exit(0);
+// });
+// process.on('SIGINT', async () => {
+//     console.log('SIGINT received, shutting down gracefully');
+//     await prisma.$disconnect();
+//     process.exit(0);
+// });
