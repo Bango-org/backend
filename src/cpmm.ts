@@ -44,8 +44,8 @@ interface MarketState {
  */
 class CPMM_AMM {
     private readonly FEE_RATE = 0.02;           // 2% fee
-    private readonly INITIAL_LIQUIDITY = 100;   // Initial liquidity per outcome
-    private readonly MIN_SHARES = 1;            // Minimum shares to maintain
+    private readonly INITIAL_LIQUIDITY = 1000;  // Increased initial liquidity per outcome
+    private readonly MIN_SHARES = 100;          // Increased minimum shares to maintain
     private readonly MAX_PRICE_IMPACT = 0.5;    // Maximum allowed price impact (50%)
     private readonly MIN_PRICE = 0.001;         // Minimum price (not exactly 0)
     private readonly MAX_PRICE = 0.999;         // Maximum price (not exactly 1)
@@ -104,6 +104,29 @@ class CPMM_AMM {
             impact: ((pricesAfter[index] - price) / price) * 100
         }));
     }
+
+    /**
+     * Check if a market has sufficient liquidity
+     * Returns true if the market is well-established
+     */
+    private isLiquidMarket(shares: number[]): boolean {
+        // Check if all shares are significantly above minimum
+        return shares.every(share => share >= this.MIN_SHARES * 2);
+    }
+
+    /**
+     * Adjust the price impact check based on market liquidity
+     */
+    private isPriceImpactTooHigh(priceImpact: number, shares: number[]): boolean {
+        // For low liquidity markets (new), allow higher price impact
+        if (!this.isLiquidMarket(shares)) {
+            // Allow up to 90% price impact for new markets
+            return Math.abs(priceImpact) > 90;
+        }
+        
+        // For established markets, use normal threshold
+        return Math.abs(priceImpact) > this.MAX_PRICE_IMPACT * 100;
+    }
     
     /**
      * Buy shares of an outcome
@@ -152,8 +175,8 @@ class CPMM_AMM {
             // Calculate price impacts
             const priceImpacts = this.calculatePriceImpacts(outcomes, pricesBefore, pricesAfter);
             
-            // Check price impact
-            if (Math.abs(priceImpacts[outcomeIndex].impact) > this.MAX_PRICE_IMPACT * 100) {
+            // Check price impact with adjusted threshold based on market liquidity
+            if (this.isPriceImpactTooHigh(priceImpacts[outcomeIndex].impact, shares)) {
                 throw new ApiError(
                     StatusCodes.BAD_REQUEST, 
                     'Price impact too high - try a smaller amount'
@@ -287,8 +310,8 @@ class CPMM_AMM {
             // Calculate price impacts
             const priceImpacts = this.calculatePriceImpacts(outcomes, pricesBefore, pricesAfter);
             
-            // Check price impact
-            if (Math.abs(priceImpacts[outcomeIndex].impact) > this.MAX_PRICE_IMPACT * 100) {
+            // Check price impact with adjusted threshold based on market liquidity
+            if (this.isPriceImpactTooHigh(priceImpacts[outcomeIndex].impact, shares)) {
                 throw new ApiError(
                     StatusCodes.BAD_REQUEST, 
                     'Price impact too high - try selling fewer shares'
