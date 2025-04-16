@@ -45,7 +45,6 @@ const createEvent = async (
         }
     });
 };
-
 /**
  * Query for Event
  * @param {Object} filter - Prisma filter
@@ -78,69 +77,109 @@ const queryEvents = async <Key extends keyof Event>(
         'updatedAt'
     ] as Key[]
 ): Promise<Pick<Event, Key>[]> => {
-    const page = options.page ?? 1;
-    const limit = options.limit ?? 10;
-    const sortBy = options.sortBy;
-    const sortType = options.sortType ?? 'desc';
+    // Use transaction to batch all queries and use a single connection
+    return prisma.$transaction(async (tx) => {
+        const page = options.page ?? 1;
+        const limit = options.limit ?? 10;
+        const sortBy = options.sortBy;
+        const sortType = options.sortType ?? 'desc';
 
-    let newFilter = filter;
-    if (filter.community !== undefined) {
-        newFilter = {
-            ...filter,
-            community: {
-                hasSome: [filter.community]
-            }
+        // Process filter for community
+        let newFilter = filter;
+        if (filter.community !== undefined) {
+            newFilter = {
+                ...filter,
+                community: {
+                    hasSome: [filter.community]
+                }
+            };
         }
-    }
 
-    const events: any = await prisma.event.findMany({
-        where: newFilter,
-        select: {
-            ...keys.reduce((obj, k) => ({ ...obj, [k]: true }), {}),
-            outcomes: {
-                select: {
-                    id: true,
-                    outcome_title: true,
-                    current_supply: true,
-                    total_liquidity: true
-                }
+        // Get all events with their related data in one query
+        const events = await tx.event.findMany({
+            where: newFilter,
+            select: {
+                id: true,
+                ...keys.reduce((obj, k) => ({ ...obj, [k]: true }), {}),
+                outcomes: {
+                    select: {
+                        id: true,
+                        outcome_title: true,
+                        current_supply: true,
+                        total_liquidity: true
+                    }
+                },
+                user: {
+                    select: {
+                        id: true,
+                        username: true
+                    }
+                },
+                _count: {
+                    select: {
+                        threads: true,
+                        trades: true
+                    }
+                },
             },
-            user: {
-                select: {
-                    id: true,
-                    username: true
-                }
-            },
-            _count: {
-                select: {
-                    threads: true,
-                    trades: true
-                }
-            },
-        },
-        skip: (page - 1) * limit,
-        take: limit,
-        orderBy: sortBy ? { [sortBy.split(":")[0]]: sortBy.split(":")[1] } : undefined
-    });
+            skip: (page - 1) * limit,
+            take: limit,
+            orderBy: sortBy
+                ? { [sortBy.split(":")[0]]: sortBy.split(":")[1] }
+                : { createdAt: 'desc' }
+        });
 
-    const newEvents = Promise.all(events.map(async (event: any) => {
+        if (events.length === 0) {
+            return [];
+        }
 
-        const usersTraded: any = await prisma.$queryRaw<number[]>`
-            SELECT COUNT(DISTINCT "userID") AS count
+        // Get all event IDs for efficient batch queries
+        const eventIds = events.map(event => event.id);
+
+        // Batch query for user trade counts
+        const usersTraded = await tx.$queryRaw<{ event_id: number, count: number }[]>`
+            SELECT "eventID" as event_id, COUNT(DISTINCT "userID") AS count
             FROM "Trade"
-            WHERE "eventID" = ${event.id};
+            WHERE "eventID" IN (${Prisma.join(eventIds)})
+            GROUP BY "eventID"
         `;
-        const numUsersTraded = Number(usersTraded[0].count);
 
-        return {
+        // Batch query for volumes
+        const volumes = await tx.trade.groupBy({
+            by: ['eventID'],
+            where: {
+                eventID: {
+                    in: eventIds
+                }
+            },
+            _sum: {
+                amount: true
+            }
+        });
+
+        // Create lookup maps for faster access
+        const userCountMap = new Map();
+        usersTraded.forEach(item => {
+            userCountMap.set(item.event_id, Number(item.count));
+        });
+
+        const volumeMap = new Map();
+        volumes.forEach(item => {
+            volumeMap.set(item.eventID, item._sum.amount);
+        });
+
+        // Combine all data
+        const enrichedEvents = events.map(event => ({
             ...event,
-            usersTraded: numUsersTraded
-        }
-    }));
+            usersTraded: userCountMap.get(event) || 0,
+            volume: volumeMap.get(event.id) || 0
+        }));
 
-
-
-    return newEvents as unknown as Pick<Event, Key>[];
+        return enrichedEvents as unknown as Pick<Event, Key>[];
+    }, {
+        maxWait: 5000, // Maximum amount of time to wait for a transaction
+        timeout: 10000  // Maximum amount of time the transaction can run
+    });
 };
 
 /**
