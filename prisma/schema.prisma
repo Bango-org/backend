@@ -157,6 +157,7 @@ model PlatformStats {
   totalValueLocked   BigInt @default(0)
   monthlyActiveUsers Int @default(0)
   dailyActiveUsers   Int @default(0)
+  updatedAt DateTime @updatedAt @default(now())
 }
 
 enum Role {
